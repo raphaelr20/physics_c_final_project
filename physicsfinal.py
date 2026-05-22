@@ -35,9 +35,9 @@ dragObject = None
 lastPos = None
 
 outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
-hel = helix(pos=vec(-2,0,0),axis=vec(4,0,0),color=color.red,coils=10)
-leftl = cylinder(pos=vec(-3,0,0),axis=vec(1,0,0),radius=0.05)
-rightl = cylinder(pos=vec(2,0,0),axis=vec(1,0,0),radius=0.05)
+hel = helix(pos=vec(-3,0,0),axis=vec(6,0,0),color=color.red,coils=15)
+leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
+rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
 inductor = [outline,hel,leftl,rightl]
 
 def move_obj(obj_arr, shift) :
@@ -53,7 +53,18 @@ def drag(evt) :
         
 def drop(evt) :
     global dragObject
-    dragObject = None
+    if dragObject!=None:
+        shift = snap_obj(dragObject[0].pos)
+        if shift!=None:
+            move_obj(dragObject,shift)
+        dragObject = None
+    
+def snap_obj(obj_pos) :
+    for i in range(3) :
+        for j in range(3) :
+            if obj_pos.x < i*10-8 and obj_pos.x > i*10-12 and obj_pos.y < j*6-7 and obj_pos.y > j*6-11 :
+                return vec(i*10-10,j*6-9,0)-obj_pos
+    return None
         
 scene.bind('mousedown',drag)
 scene.bind('mouseup',drop)
@@ -65,4 +76,3 @@ while True:
         shift = newPos-lastPos
         move_obj(dragObject,shift)
         lastPos = newPos
-
