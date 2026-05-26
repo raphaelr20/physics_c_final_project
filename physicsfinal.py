@@ -43,6 +43,39 @@ class Inductor :
     def move(self,shift):
         for obj in self.parts:
             obj.pos += shift
+    def delete_obj(self) :
+        for obj in self.parts:
+            obj.visible = False
+
+class Capacitor :
+    def __init__(self,cap=10) :
+        self.capacitance = cap
+        self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
+        self.left_plate = box(pos=vec(-0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
+        self.right_plate = box(pos=vec(0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
+        self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(4.5,0,0),radius=0.05)
+        self.rightl = cylinder(pos=vec(.5,0,0),axis=vec(4.5,0,0),radius=0.05)
+        self.parts = [self.outline,self.left_plate,self.right_plate,self.leftl,self.rightl]
+    def move(self,shift):
+        for obj in self.parts:
+            obj.pos += shift
+    def delete_obj(self) :
+        for obj in self.parts:
+            obj.visible = False
+            
+class Resistor :
+    def __init__(self,res=10) :
+        self.resistance = res
+        self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
+        self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
+        self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
+        self.parts = [self.outline,self.leftl,self.rightl]
+    def move(self,shift):
+        for obj in self.parts:
+            obj.pos += shift
+    def delete_obj(self) :
+        for obj in self.parts:
+            obj.visible = False
 
 
 dragObject = None
