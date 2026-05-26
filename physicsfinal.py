@@ -67,13 +67,20 @@ class Resistor :
     def __init__(self,res=10) :
         self.resistance = res
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
+        self.r1 = cylinder(pos=vec(-3,0,0),axis=vec(.5,1,0),radius=0.05,color=color.orange)
+        self.r2 = cylinder(pos=vec(-2.5,1,0),axis=vec(1,-2,0),radius=0.05,color=color.orange)
+        self.r3 = cylinder(pos=vec(-1.5,-1,0),axis=vec(1,2,0),radius=0.05,color=color.orange)
+        self.r4 = cylinder(pos=vec(-0.5,1,0),axis=vec(1,-2,0),radius=0.05,color=color.orange)
+        self.r5 = cylinder(pos=vec(0.5,-1,0),axis=vec(1,2,0),radius=0.05,color=color.orange)
+        self.r6 = cylinder(pos=vec(1.5,1,0),axis=vec(1,-2,0),radius=0.05,color=color.orange)
+        self.r7 = cylinder(pos=vec(2.5,-1,0),axis=vec(.5,1,0),radius=0.05,color=color.orange)
         self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
         self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
-        self.parts = [self.outline,self.leftl,self.rightl]
+        self.parts = [self.outline,self.r1,self.r2,self.r3,self.r4,self.r5,self.r6,self.r7,self.leftl,self.rightl]
     def move(self,shift):
         for obj in self.parts:
             obj.pos += shift
-    def delete_obj(self) :
+    def destroy(self) :
         for obj in self.parts:
             obj.visible = False
 
