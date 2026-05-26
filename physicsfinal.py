@@ -83,29 +83,29 @@ lastPos = None
 
 objects = []
 
-def move_obj(obj_arr, shift) :
-    for obj in obj_arr:
-        obj.pos += shift
     
 def drag(evt) :
     global dragObject, lastPos
     for obj in objects :
         if scene.mouse.pick == obj.outline:
             dragObject = obj
-            lastPos = evt.pos
-    
+            lastPos = scene.mouse.project(normal=vec(0,0,1))
         
 def drop(evt) :
     global dragObject
     if dragObject!=None:
-        shift = snap_obj(dragObject.outline.pos)
+        obj_pos = dragObject.outline.pos
+        shift = snap_obj(obj_pos)
         if shift!=None:
             dragObject.move(shift)
+        elif obj_pos.x > 14.55 and obj_pos.x < 17.85 and obj_pos.y > -11.05 and obj_pos.y < -9.55:
+            dragObject.destroy()
+            objects.remove(dragObject)
         dragObject = None
     
 def snap_obj(obj_pos) :
     for i in range(3) :
-        for j in range(3) :
+        for j in range(4) :
             if obj_pos.x < i*10-8 and obj_pos.x > i*10-12 and obj_pos.y < j*6-7 and obj_pos.y > j*6-11 :
                 return vec(i*10-10,j*6-9,0)-obj_pos
     return None
@@ -113,11 +113,24 @@ def snap_obj(obj_pos) :
 def new_inductor(evt) :
     ind = Inductor()
     objects.append(ind)
+    
+def new_capacitor(evt) :
+    cap = Capacitor()
+    objects.append(cap)
+    
+def new_resistor(evt) :
+    res = Resistor()
+    objects.append(res)
         
 scene.bind('mousedown',drag)
 scene.bind('mouseup',drop)
 
 new_ind_button = button(bind=new_inductor,text='new inductor')
+new_cap_button = button(bind=new_capacitor,text='new capacitor')
+new_res_button = button(bind=new_resistor,text='new resistor')
+
+box(pos=vec(16.2,-10.3,0),height=1.5,length=3.3,width=0.1)
+text(pos=vec(14.55,-10.7,0),axis=vec(3,0,0),text="Trash",color=color.black,depth=0.05)
 
 while True:
     rate(60)
@@ -126,4 +139,3 @@ while True:
         shift = newPos-lastPos
         dragObject.move(shift)
         lastPos = newPos
-        
