@@ -18,18 +18,19 @@ curve(pos=[vec(5,2.9,0),vec(5,-2.9,0)],color=color.red)
 curve(pos=[vec(5,-3.1,0),vec(5,-9,0)],color=color.red)
 
 #horizontal lines of grid
-curve(pos=[vec(-14.8,9,0),vec(-5.2,9,0)],color=color.red)
-curve(pos=[vec(-4.8,9,0),vec(4.8,9,0)],color=color.red)
-curve(pos=[vec(14.8,9,0),vec(5.2,9,0)],color=color.red)
-curve(pos=[vec(-14.8,3,0),vec(-5.2,3,0)],color=color.red)
-curve(pos=[vec(-4.8,3,0),vec(4.8,3,0)],color=color.red)
-curve(pos=[vec(14.8,3,0),vec(5.2,3,0)],color=color.red)
-curve(pos=[vec(-14.8,-3,0),vec(-5.2,-3,0)],color=color.red)
-curve(pos=[vec(-4.8,-3,0),vec(4.8,-3,0)],color=color.red)
-curve(pos=[vec(14.8,-3,0),vec(5.2,-3,0)],color=color.red)
-curve(pos=[vec(-14.8,-9,0),vec(-5.2,-9,0)],color=color.red)
-curve(pos=[vec(-4.8,-9,0),vec(4.8,-9,0)],color=color.red)
-curve(pos=[vec(14.8,-9,0),vec(5.2,-9,0)],color=color.red)
+c00 = curve(pos=[vec(-14.8,-9,0),vec(-5.2,-9,0)],color=color.red)
+c01 = curve(pos=[vec(-4.8,-9,0),vec(4.8,-9,0)],color=color.red)
+c02 = curve(pos=[vec(14.8,-9,0),vec(5.2,-9,0)],color=color.red)
+c10 = curve(pos=[vec(-14.8,-3,0),vec(-5.2,-3,0)],color=color.red)
+c11 = curve(pos=[vec(-4.8,-3,0),vec(4.8,-3,0)],color=color.red)
+c12 = curve(pos=[vec(14.8,-3,0),vec(5.2,-3,0)],color=color.red)
+c20 = curve(pos=[vec(-14.8,3,0),vec(-5.2,3,0)],color=color.red)
+c21 = curve(pos=[vec(-4.8,3,0),vec(4.8,3,0)],color=color.red)
+c22 = curve(pos=[vec(14.8,3,0),vec(5.2,3,0)],color=color.red)
+c30 = curve(pos=[vec(-14.8,9,0),vec(-5.2,9,0)],color=color.red)
+c31 = curve(pos=[vec(-4.8,9,0),vec(4.8,9,0)],color=color.red)
+c32 = curve(pos=[vec(14.8,9,0),vec(5.2,9,0)],color=color.red)
+horiz = [c00,c01,c02,c10,c11,c12,c20,c21,c22,c30,c31,c32]
 
 
 class Inductor :
@@ -40,10 +41,11 @@ class Inductor :
         self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
         self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
         self.parts = [self.outline,self.hel,self.leftl,self.rightl]
+        self.covered_line = None
     def move(self,shift):
         for obj in self.parts:
             obj.pos += shift
-    def delete_obj(self) :
+    def destroy(self) :
         for obj in self.parts:
             obj.visible = False
 
@@ -56,10 +58,11 @@ class Capacitor :
         self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(4.5,0,0),radius=0.05)
         self.rightl = cylinder(pos=vec(.5,0,0),axis=vec(4.5,0,0),radius=0.05)
         self.parts = [self.outline,self.left_plate,self.right_plate,self.leftl,self.rightl]
+        self.covered_line = None
     def move(self,shift):
         for obj in self.parts:
             obj.pos += shift
-    def delete_obj(self) :
+    def destroy(self) :
         for obj in self.parts:
             obj.visible = False
             
@@ -77,13 +80,13 @@ class Resistor :
         self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
         self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
         self.parts = [self.outline,self.r1,self.r2,self.r3,self.r4,self.r5,self.r6,self.r7,self.leftl,self.rightl]
+        self.covered_line = None
     def move(self,shift):
         for obj in self.parts:
             obj.pos += shift
     def destroy(self) :
         for obj in self.parts:
             obj.visible = False
-
 
 dragObject = None
 lastPos = None
@@ -96,6 +99,9 @@ def drag(evt) :
     for obj in objects :
         if scene.mouse.pick == obj.outline:
             dragObject = obj
+            if dragObject.covered_line != None:
+                dragObject.covered_line.visible = True
+                dragObject.covered_line = None
             lastPos = scene.mouse.project(normal=vec(0,0,1))
         
 def drop(evt) :
@@ -105,6 +111,9 @@ def drop(evt) :
         shift = snap_obj(obj_pos)
         if shift!=None:
             dragObject.move(shift)
+            new_pos = dragObject.outline.pos;
+            dragObject.covered_line = horiz[((new_pos.y+9)/6)*3+(new_pos.x+10)/10]
+            dragObject.covered_line.visible = False
         elif obj_pos.x > 14.55 and obj_pos.x < 17.85 and obj_pos.y > -11.05 and obj_pos.y < -9.55:
             dragObject.destroy()
             objects.remove(dragObject)
@@ -146,3 +155,4 @@ while True:
         shift = newPos-lastPos
         dragObject.move(shift)
         lastPos = newPos
+        
