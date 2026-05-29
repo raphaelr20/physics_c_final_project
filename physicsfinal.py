@@ -32,32 +32,9 @@ c31 = curve(pos=[vec(-4.8,9,0),vec(4.8,9,0)],color=color.red)
 c32 = curve(pos=[vec(14.8,9,0),vec(5.2,9,0)],color=color.red)
 horiz = [c00,c01,c02,c10,c11,c12,c20,c21,c22,c30,c31,c32]
 
-
-class Inductor :
-    def __init__(self,ind=10) :
-        self.inductance = ind
-        self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
-        self.hel = helix(pos=vec(-3,0,0),axis=vec(6,0,0),color=color.red,coils=15)
-        self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
-        self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
-        self.parts = [self.outline,self.hel,self.leftl,self.rightl]
-        self.covered_line = None
-    def move(self,shift):
-        for obj in self.parts:
-            obj.pos += shift
-    def destroy(self) :
-        for obj in self.parts:
-            obj.visible = False
-
-class Capacitor :
-    def __init__(self,cap=10) :
-        self.capacitance = cap
-        self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
-        self.left_plate = box(pos=vec(-0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
-        self.right_plate = box(pos=vec(0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
-        self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(4.5,0,0),radius=0.05)
-        self.rightl = cylinder(pos=vec(.5,0,0),axis=vec(4.5,0,0),radius=0.05)
-        self.parts = [self.outline,self.left_plate,self.right_plate,self.leftl,self.rightl]
+class Component :
+    def __init__(self) :
+        self.parts = []
         self.covered_line = None
     def move(self,shift):
         for obj in self.parts:
@@ -66,8 +43,30 @@ class Capacitor :
         for obj in self.parts:
             obj.visible = False
             
-class Resistor :
+class Inductor(Component) :
+    def __init__(self,ind=10) :
+        Component.__init__(self)
+        self.inductance = ind
+        self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
+        self.hel = helix(pos=vec(-3,0,0),axis=vec(6,0,0),color=color.red,coils=15)
+        self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
+        self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
+        self.parts = [self.outline,self.hel,self.leftl,self.rightl]
+
+class Capacitor(Component) :
+    def __init__(self,cap=10) :
+        Component.__init__(self)
+        self.capacitance = cap
+        self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
+        self.left_plate = box(pos=vec(-0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
+        self.right_plate = box(pos=vec(0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
+        self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(4.5,0,0),radius=0.05)
+        self.rightl = cylinder(pos=vec(.5,0,0),axis=vec(4.5,0,0),radius=0.05)
+        self.parts = [self.outline,self.left_plate,self.right_plate,self.leftl,self.rightl]
+            
+class Resistor(Component) :
     def __init__(self,res=10) :
+        Component.__init__(self)
         self.resistance = res
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
         self.r1 = cylinder(pos=vec(-3,0,0),axis=vec(.5,1,0),radius=0.05,color=color.orange)
@@ -80,13 +79,14 @@ class Resistor :
         self.leftl = cylinder(pos=vec(-5,0,0),axis=vec(2,0,0),radius=0.05)
         self.rightl = cylinder(pos=vec(3,0,0),axis=vec(2,0,0),radius=0.05)
         self.parts = [self.outline,self.r1,self.r2,self.r3,self.r4,self.r5,self.r6,self.r7,self.leftl,self.rightl]
-        self.covered_line = None
-    def move(self,shift):
-        for obj in self.parts:
-            obj.pos += shift
-    def destroy(self) :
-        for obj in self.parts:
-            obj.visible = False
+        
+class Wire(Component) :
+    def __init__(self,posit,ax) :
+        Component.__init__(self)
+        self.outline = box(pos=posit+ax/2,length=ax.x if ax.x != 0 else 0.3,height=ax.y if ax.y != 0 else 0.3,opacity = 0)
+        self.line = cylinder(pos=posit,axis=ax,radius=0.05)
+        self.parts = [self.outline,self.line]
+
 
 dragObject = None
 lastPos = None
@@ -137,6 +137,14 @@ def new_capacitor(evt) :
 def new_resistor(evt) :
     res = Resistor()
     objects.append(res)
+    
+def new_horiz_wire(evt) :
+    wire = Wire(vec(-5,0,0),vec(10,0,0))
+    objects.append(wire)
+    
+def new_vert_wire(evt) :
+    wire = Wire(vec(0,-3,0),vec(0,6,0))
+    objects.append(wire)
         
 scene.bind('mousedown',drag)
 scene.bind('mouseup',drop)
@@ -144,6 +152,8 @@ scene.bind('mouseup',drop)
 new_ind_button = button(bind=new_inductor,text='new inductor')
 new_cap_button = button(bind=new_capacitor,text='new capacitor')
 new_res_button = button(bind=new_resistor,text='new resistor')
+new_horiz_wire_button = button(bind=new_horiz_wire,text='new horizontal wire')
+new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
 
 box(pos=vec(16.2,-10.3,0),height=1.5,length=3.3,width=0.1)
 text(pos=vec(14.55,-10.7,0),axis=vec(3,0,0),text="Trash",color=color.black,depth=0.05)
