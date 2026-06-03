@@ -4,18 +4,19 @@ Web VPython 3.2
 scene.camera.pos=vec(0,0,20)
 
 # vertical lines of grid
-curve(pos=[vec(-15,-9,0),vec(-15,-3.1,0)],color=color.red)
-curve(pos=[vec(-15,-2.9,0),vec(-15,2.9,0)],color=color.red)
-curve(pos=[vec(-15,3.1,0),vec(-15,9,0)],color=color.red)
-curve(pos=[vec(15,9,0),vec(15,3.1,0)],color=color.red)
-curve(pos=[vec(15,-2.9,0),vec(15,2.9,0)],color=color.red)
-curve(pos=[vec(15,-3.1,0),vec(15,-9,0)],color=color.red)
-curve(pos=[vec(-5,9,0),vec(-5,3.1,0)],color=color.red)
-curve(pos=[vec(-5,2.9,0),vec(-5,-2.9,0)],color=color.red)
-curve(pos=[vec(-5,-3.1,0),vec(-5,-9,0)],color=color.red)
-curve(pos=[vec(5,9,0),vec(5,3.1,0)],color=color.red)
-curve(pos=[vec(5,2.9,0),vec(5,-2.9,0)],color=color.red)
-curve(pos=[vec(5,-3.1,0),vec(5,-9,0)],color=color.red)
+v00 = curve(pos=[vec(-15,-3.1,0),vec(-15,-9,0)],color=color.red)
+v01 = curve(pos=[vec(-5,-9,0),vec(-5,-3.1,0)],color=color.red)
+v02 = curve(pos=[vec(5,-9,0),vec(5,-3.1,0)],color=color.red)
+v03 = curve(pos=[vec(15,-9,0),vec(15,-3.1,0)],color=color.red)
+v10 = curve(pos=[vec(-15,-2.9,0),vec(-15,2.9,0)],color=color.red)
+v11 = curve(pos=[vec(-5,2.9,0),vec(-5,-2.9,0)],color=color.red)
+v12 = curve(pos=[vec(5,2.9,0),vec(5,-2.9,0)],color=color.red)
+v13 = curve(pos=[vec(15,-2.9,0),vec(15,2.9,0)],color=color.red)
+v20 = curve(pos=[vec(-15,9,0),vec(-15,3.1,0)],color=color.red)
+v21 = curve(pos=[vec(-5,3.1,0),vec(-5,9,0)],color=color.red)
+v22 = curve(pos=[vec(5,3.1,0),vec(5,9,0)],color=color.red)
+v23 = curve(pos=[vec(15,3.1,0),vec(15,9,0)],color=color.red)
+vert = [v00,v01,v02,v03,v10,v11,v12,v13,v20,v21,v22,v23]
 
 #horizontal lines of grid
 c00 = curve(pos=[vec(-14.8,-9,0),vec(-5.2,-9,0)],color=color.red)
@@ -36,6 +37,7 @@ class Component :
     def __init__(self) :
         self.parts = []
         self.covered_line = None
+        self.kind = ""
     def move(self,shift):
         for obj in self.parts:
             obj.pos += shift
@@ -46,6 +48,7 @@ class Component :
 class Inductor(Component) :
     def __init__(self,ind=10) :
         Component.__init__(self)
+        self.kind = "inductor"
         self.inductance = ind
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
         self.hel = helix(pos=vec(-3,0,0),axis=vec(6,0,0),color=color.red,coils=15)
@@ -56,6 +59,7 @@ class Inductor(Component) :
 class Capacitor(Component) :
     def __init__(self,cap=10) :
         Component.__init__(self)
+        self.kind = "capacitor"
         self.capacitance = cap
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
         self.left_plate = box(pos=vec(-0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
@@ -67,6 +71,7 @@ class Capacitor(Component) :
 class Resistor(Component) :
     def __init__(self,res=10) :
         Component.__init__(self)
+        self.kind = "resistor"
         self.resistance = res
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
         self.r1 = cylinder(pos=vec(-3,0,0),axis=vec(.5,1,0),radius=0.05,color=color.orange)
@@ -81,11 +86,20 @@ class Resistor(Component) :
         self.parts = [self.outline,self.r1,self.r2,self.r3,self.r4,self.r5,self.r6,self.r7,self.leftl,self.rightl]
         
 class Wire(Component) :
-    def __init__(self,posit,ax) :
+    def __init__(self,posit,ax,dir) :
         Component.__init__(self)
+        self.kind = "wire"
+        self.direction = dir
         self.outline = box(pos=posit+ax/2,length=ax.x if ax.x != 0 else 0.3,height=ax.y if ax.y != 0 else 0.3,opacity = 0)
         self.line = cylinder(pos=posit,axis=ax,radius=0.05)
         self.parts = [self.outline,self.line]
+        
+class Node() :
+    def __init__(self) :
+        self.up = None
+        self.down = None
+        self.right = None
+        self.left = None
 
 
 dragObject = None
@@ -109,11 +123,19 @@ def drop(evt) :
     if dragObject!=None:
         obj_pos = dragObject.outline.pos
         shift = snap_obj(obj_pos)
+        if dragObject.kind=="wire" :
+            if dragObject.direction=="vert":
+                shift = snap_obj_vert(obj_pos)
         if shift!=None:
             dragObject.move(shift)
             new_pos = dragObject.outline.pos;
-            dragObject.covered_line = horiz[((new_pos.y+9)/6)*3+(new_pos.x+10)/10]
-            dragObject.covered_line.visible = False
+            if dragObject.kind=="wire" :
+                if dragObject.direction=="vert":
+                    dragObject.covered_line = vert[((new_pos.y+6)/6)*4+(new_pos.x+15)/10]
+                    dragObject.covered_line.visible = False
+            else :
+                dragObject.covered_line = horiz[((new_pos.y+9)/6)*3+(new_pos.x+10)/10]
+                dragObject.covered_line.visible = False
         elif obj_pos.x > 14.55 and obj_pos.x < 17.85 and obj_pos.y > -11.05 and obj_pos.y < -9.55:
             dragObject.destroy()
             objects.remove(dragObject)
@@ -124,6 +146,12 @@ def snap_obj(obj_pos) :
         for j in range(4) :
             if obj_pos.x < i*10-8 and obj_pos.x > i*10-12 and obj_pos.y < j*6-7 and obj_pos.y > j*6-11 :
                 return vec(i*10-10,j*6-9,0)-obj_pos
+    return None
+def snap_obj_vert(obj_pos) :
+    for i in range(4) :
+        for j in range(3) :
+            if obj_pos.x < i*10-13 and obj_pos.x > i*10-17 and obj_pos.y < j*6-4 and obj_pos.y > j*6-8 :
+                return vec(i*10-15,j*6-6,0)-obj_pos
     return None
     
 def new_inductor(evt) :
@@ -139,12 +167,17 @@ def new_resistor(evt) :
     objects.append(res)
     
 def new_horiz_wire(evt) :
-    wire = Wire(vec(-5,0,0),vec(10,0,0))
+    wire = Wire(vec(-5,0,0),vec(10,0,0),"horiz")
     objects.append(wire)
     
 def new_vert_wire(evt) :
-    wire = Wire(vec(0,-3,0),vec(0,6,0))
+    wire = Wire(vec(0,-3,0),vec(0,6,0),"vert")
     objects.append(wire)
+    
+def run(evt) :
+    nodes = []
+    for obj in objects:
+        
         
 scene.bind('mousedown',drag)
 scene.bind('mouseup',drop)
@@ -154,6 +187,7 @@ new_cap_button = button(bind=new_capacitor,text='new capacitor')
 new_res_button = button(bind=new_resistor,text='new resistor')
 new_horiz_wire_button = button(bind=new_horiz_wire,text='new horizontal wire')
 new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
+run_button = button(bind=run,text='run simulation')
 
 box(pos=vec(16.2,-10.3,0),height=1.5,length=3.3,width=0.1)
 text(pos=vec(14.55,-10.7,0),axis=vec(3,0,0),text="Trash",color=color.black,depth=0.05)
@@ -165,4 +199,3 @@ while True:
         shift = newPos-lastPos
         dragObject.move(shift)
         lastPos = newPos
-        
