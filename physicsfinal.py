@@ -1,36 +1,35 @@
-from vpython import *
 Web VPython 3.2
 
 scene.camera.pos=vec(0,0,20)
 
 # vertical lines of grid
-v00 = curve(pos=[vec(-15,-3.1,0),vec(-15,-9,0)],color=color.red)
-v01 = curve(pos=[vec(-5,-9,0),vec(-5,-3.1,0)],color=color.red)
-v02 = curve(pos=[vec(5,-9,0),vec(5,-3.1,0)],color=color.red)
-v03 = curve(pos=[vec(15,-9,0),vec(15,-3.1,0)],color=color.red)
+v00 = curve(pos=[vec(-15,3.1,0),vec(-15,9,0)],color=color.red)
+v01 = curve(pos=[vec(-5,9,0),vec(-5,3.1,0)],color=color.red)
+v02 = curve(pos=[vec(5,9,0),vec(5,3.1,0)],color=color.red)
+v03 = curve(pos=[vec(15,9,0),vec(15,3.1,0)],color=color.red)
 v10 = curve(pos=[vec(-15,-2.9,0),vec(-15,2.9,0)],color=color.red)
 v11 = curve(pos=[vec(-5,2.9,0),vec(-5,-2.9,0)],color=color.red)
 v12 = curve(pos=[vec(5,2.9,0),vec(5,-2.9,0)],color=color.red)
 v13 = curve(pos=[vec(15,-2.9,0),vec(15,2.9,0)],color=color.red)
-v20 = curve(pos=[vec(-15,9,0),vec(-15,3.1,0)],color=color.red)
-v21 = curve(pos=[vec(-5,3.1,0),vec(-5,9,0)],color=color.red)
-v22 = curve(pos=[vec(5,3.1,0),vec(5,9,0)],color=color.red)
-v23 = curve(pos=[vec(15,3.1,0),vec(15,9,0)],color=color.red)
+v20 = curve(pos=[vec(-15,-9,0),vec(-15,-3.1,0)],color=color.red)
+v21 = curve(pos=[vec(-5,-3.1,0),vec(-5,-9,0)],color=color.red)
+v22 = curve(pos=[vec(5,-3.1,0),vec(5,-9,0)],color=color.red)
+v23 = curve(pos=[vec(15,-3.1,0),vec(15,-9,0)],color=color.red)
 vert = [v00,v01,v02,v03,v10,v11,v12,v13,v20,v21,v22,v23]
 
 #horizontal lines of grid
-c00 = curve(pos=[vec(-14.8,-9,0),vec(-5.2,-9,0)],color=color.red)
-c01 = curve(pos=[vec(-4.8,-9,0),vec(4.8,-9,0)],color=color.red)
-c02 = curve(pos=[vec(14.8,-9,0),vec(5.2,-9,0)],color=color.red)
-c10 = curve(pos=[vec(-14.8,-3,0),vec(-5.2,-3,0)],color=color.red)
-c11 = curve(pos=[vec(-4.8,-3,0),vec(4.8,-3,0)],color=color.red)
-c12 = curve(pos=[vec(14.8,-3,0),vec(5.2,-3,0)],color=color.red)
-c20 = curve(pos=[vec(-14.8,3,0),vec(-5.2,3,0)],color=color.red)
-c21 = curve(pos=[vec(-4.8,3,0),vec(4.8,3,0)],color=color.red)
-c22 = curve(pos=[vec(14.8,3,0),vec(5.2,3,0)],color=color.red)
-c30 = curve(pos=[vec(-14.8,9,0),vec(-5.2,9,0)],color=color.red)
-c31 = curve(pos=[vec(-4.8,9,0),vec(4.8,9,0)],color=color.red)
-c32 = curve(pos=[vec(14.8,9,0),vec(5.2,9,0)],color=color.red)
+c00 = curve(pos=[vec(-14.8,9,0),vec(-5.2,9,0)],color=color.red)
+c01 = curve(pos=[vec(-4.8,9,0),vec(4.8,9,0)],color=color.red)
+c02 = curve(pos=[vec(14.8,9,0),vec(5.2,9,0)],color=color.red)
+c10 = curve(pos=[vec(-14.8,3,0),vec(-5.2,3,0)],color=color.red)
+c11 = curve(pos=[vec(-4.8,3,0),vec(4.8,3,0)],color=color.red)
+c12 = curve(pos=[vec(14.8,3,0),vec(5.2,3,0)],color=color.red)
+c20 = curve(pos=[vec(-14.8,-3,0),vec(-5.2,-3,0)],color=color.red)
+c21 = curve(pos=[vec(-4.8,-3,0),vec(4.8,-3,0)],color=color.red)
+c22 = curve(pos=[vec(14.8,-3,0),vec(5.2,-3,0)],color=color.red)
+c30 = curve(pos=[vec(-14.8,-9,0),vec(-5.2,-9,0)],color=color.red)
+c31 = curve(pos=[vec(-4.8,-9,0),vec(4.8,-9,0)],color=color.red)
+c32 = curve(pos=[vec(14.8,-9,0),vec(5.2,-9,0)],color=color.red)
 horiz = [c00,c01,c02,c10,c11,c12,c20,c21,c22,c30,c31,c32]
 
 class Component :
@@ -95,11 +94,9 @@ class Wire(Component) :
         self.parts = [self.outline,self.line]
         
 class Node() :
-    def __init__(self) :
-        self.up = None
-        self.down = None
-        self.right = None
-        self.left = None
+    def __init__(self,x,y) :
+        self.x = x
+        self.y = y
         self.edges = []
 
 
@@ -132,10 +129,13 @@ def drop(evt) :
             new_pos = dragObject.outline.pos;
             if dragObject.kind=="wire" :
                 if dragObject.direction=="vert":
-                    dragObject.covered_line = vert[((new_pos.y+6)/6)*4+(new_pos.x+15)/10]
+                    dragObject.covered_line = vert[(2-(new_pos.y+6)/6)*4+(new_pos.x+15)/10]
+                    dragObject.covered_line.visible = False
+                else :
+                    dragObject.covered_line = horiz[(3-(new_pos.y+9)/6)*3+(new_pos.x+10)/10]
                     dragObject.covered_line.visible = False
             else :
-                dragObject.covered_line = horiz[((new_pos.y+9)/6)*3+(new_pos.x+10)/10]
+                dragObject.covered_line = horiz[(3-(new_pos.y+9)/6)*3+(new_pos.x+10)/10]
                 dragObject.covered_line.visible = False
         elif obj_pos.x > 14.55 and obj_pos.x < 17.85 and obj_pos.y > -11.05 and obj_pos.y < -9.55:
             dragObject.destroy()
@@ -182,16 +182,6 @@ def run(evt) :
         for i in range(4):
             row.append(Node(i,j))
         nodes.append(row)
-    for j in range(4):
-        for i in range(4):
-            if i < 3:
-                nodes[j][i].right = nodes[j][i+1]
-            if i > 0:
-                nodes[j][i].left = nodes[j][i-1]
-            if j < 3:
-                nodes[j][i].up = nodes[j+1][i]
-            if j > 0:
-                nodes[j][i].down = nodes[j-1][i]
     edges = []
     for obj in objects:
         if obj.covered_line == None:
@@ -207,7 +197,83 @@ def run(evt) :
             row = int(3-(obj.outline.pos.y + 9)/6)
             node1 = nodes[row][col]
             node2 = nodes[row][col+1]
-        edges.append((node1,node2,obj))
+        edge = (node1,node2,obj)
+        node1.edges.append(edge)
+        node2.edges.append(edge)
+        edges.append(edge)
+    loops = find_loops(nodes,edges)
+    print("loops found:")
+    print(len(loops))
+    for i in range(len(loops)):
+        print("loop",i+1)
+        for edge in loops[i]:
+            print(edge[2].kind)
+        
+def other_node(edge,node):
+    if edge[0] == node:
+        return edge[1]
+    else:
+        return edge[0]
+
+def build_tree(node,visited,tree_edges,extra_edges):
+    visited.append(node)
+    for edge in node.edges:
+        next_node = other_node(edge, node)
+        if next_node not in visited:
+            tree_edges.append(edge)
+            build_tree(next_node,visited,tree_edges,extra_edges)
+        elif edge not in tree_edges and edge not in extra_edges:
+            extra_edges.append(edge)
+
+def find_path(current,target,tree_edges,visited,path):
+    if current == target:
+        return True
+    visited.append(current)
+    for edge in tree_edges:
+        if edge[0] == current:
+            next_node = edge[1]
+        elif edge[1] == current:
+            next_node = edge[0]
+        else:
+            continue
+        if next_node not in visited:
+            path.append(edge)
+            if find_path(next_node,target,tree_edges,visited,path):
+                return True
+            path.pop()
+    return False
+
+def find_path_wrapper(start,end,tree_edges):
+    visited = []
+    path = []
+    if find_path(start,end,tree_edges,visited,path):
+        return path
+    return None
+
+def find_loops(nodes,edges):
+    visited = []
+    tree_edges = []
+    extra_edges = []
+    start = None
+    for row in nodes:
+        for node in row:
+            if len(node.edges) > 0:
+                start = node
+                break
+        if start != None:
+            break
+    if start == None:
+        return []
+    build_tree(start,visited,tree_edges,extra_edges)
+    loops = []
+    for edge in extra_edges:
+        path = find_path_wrapper(edge[0],edge[1],tree_edges)
+        if path != None:
+            loop = path[:]
+            loop.append(edge)
+            loops.append(loop)
+    return loops
+    
         
         
 scene.bind('mousedown',drag)
@@ -230,3 +296,4 @@ while True:
         shift = newPos-lastPos
         dragObject.move(shift)
         lastPos = newPos
+        
