@@ -100,6 +100,7 @@ class Node() :
         self.down = None
         self.right = None
         self.left = None
+        self.edges = []
 
 
 dragObject = None
@@ -176,7 +177,37 @@ def new_vert_wire(evt) :
     
 def run(evt) :
     nodes = []
+    for j in range(4):
+        row = []
+        for i in range(4):
+            row.append(Node(i,j))
+        nodes.append(row)
+    for j in range(4):
+        for i in range(4):
+            if i < 3:
+                nodes[j][i].right = nodes[j][i+1]
+            if i > 0:
+                nodes[j][i].left = nodes[j][i-1]
+            if j < 3:
+                nodes[j][i].up = nodes[j+1][i]
+            if j > 0:
+                nodes[j][i].down = nodes[j-1][i]
+    edges = []
     for obj in objects:
+        if obj.covered_line == None:
+            print("All objects must be on the circuit or removed in the trash")
+            return None
+        if obj.kind == "wire" and obj.direction == "vert":
+            col = int((obj.outline.pos.x + 15)/10)
+            row = int(2-(obj.outline.pos.y + 6)/6)
+            node1 = nodes[row][col]
+            node2 = nodes[row+1][col]
+        else:
+            col = int((obj.outline.pos.x + 10)/10)
+            row = int(3-(obj.outline.pos.y + 9)/6)
+            node1 = nodes[row][col]
+            node2 = nodes[row][col+1]
+        edges.append((node1,node2,obj))
         
         
 scene.bind('mousedown',drag)
