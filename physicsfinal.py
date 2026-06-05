@@ -102,19 +102,21 @@ class Node() :
 
 dragObject = None
 lastPos = None
+started = False
 
 objects = []
 
     
 def drag(evt) :
     global dragObject, lastPos
-    for obj in objects :
-        if scene.mouse.pick == obj.outline:
-            dragObject = obj
-            if dragObject.covered_line != None:
-                dragObject.covered_line.visible = True
-                dragObject.covered_line = None
-            lastPos = scene.mouse.project(normal=vec(0,0,1))
+    if started==False:
+        for obj in objects :
+            if scene.mouse.pick == obj.outline:
+                dragObject = obj
+                if dragObject.covered_line != None:
+                    dragObject.covered_line.visible = True
+                    dragObject.covered_line = None
+                lastPos = scene.mouse.project(normal=vec(0,0,1))
         
 def drop(evt) :
     global dragObject
@@ -176,6 +178,7 @@ def new_vert_wire(evt) :
     objects.append(wire)
     
 def run(evt) :
+    global started
     nodes = []
     for j in range(4):
         row = []
@@ -202,12 +205,22 @@ def run(evt) :
         node2.edges.append(edge)
         edges.append(edge)
     loops = find_loops(nodes,edges)
+    if len(loops)==0 :
+        print("Must have at least one loop to run")
+        return None
     print("loops found:")
     print(len(loops))
     for i in range(len(loops)):
         print("loop",i+1)
         for edge in loops[i]:
             print(edge[2].kind)
+            
+    started = True
+    for line in horiz :
+        line.visible = False
+    for line in vert :
+        line.visible = False
+    print(started)
         
 def other_node(edge,node):
     if edge[0] == node:
@@ -274,7 +287,16 @@ def find_loops(nodes,edges):
             loops.append(loop)
     return loops
     
-        
+def stop(evt) :
+    global started
+    started = False
+    for line in horiz :
+        line.visible = True
+    for line in vert :
+        line.visible = True
+    for obj in objects :
+        obj.covered_line.visible = False
+
         
 scene.bind('mousedown',drag)
 scene.bind('mouseup',drop)
@@ -285,15 +307,19 @@ new_res_button = button(bind=new_resistor,text='new resistor')
 new_horiz_wire_button = button(bind=new_horiz_wire,text='new horizontal wire')
 new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
 run_button = button(bind=run,text='run simulation')
+stop_button = button(bind=stop,text='stop simulation')
 
 box(pos=vec(16.2,-10.3,0),height=1.5,length=3.3,width=0.1)
 text(pos=vec(14.55,-10.7,0),axis=vec(3,0,0),text="Trash",color=color.black,depth=0.05)
 
 while True:
     rate(60)
-    if dragObject != None:
-        newPos = scene.mouse.project(normal=vec(0,0,1))
-        shift = newPos-lastPos
-        dragObject.move(shift)
-        lastPos = newPos
+    if started==True:
+        None
+    else:
+        if dragObject != None:
+            newPos = scene.mouse.project(normal=vec(0,0,1))
+            shift = newPos-lastPos
+            dragObject.move(shift)
+            lastPos = newPos
         
