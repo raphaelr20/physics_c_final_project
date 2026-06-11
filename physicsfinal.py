@@ -32,6 +32,17 @@ c31 = curve(pos=[vec(-4.8,-9,0),vec(4.8,-9,0)],color=color.red)
 c32 = curve(pos=[vec(14.8,-9,0),vec(5.2,-9,0)],color=color.red)
 horiz = [c00,c01,c02,c10,c11,c12,c20,c21,c22,c30,c31,c32]
 
+# graph
+scene_graph = graph(title="Series RLC Circuit Response", xtitle="Time (s)", ytitle="Amplitude", width=800, height=400)
+current_plot = gcurve(graph=scene_graph, color=color.blue, label="Inductor Current (A)", fast=False)
+voltage_plot = gcurve(graph=scene_graph, color=color.red, label="Capacitor Voltage (V)", fast=False)
+
+# trash
+box(pos=vec(16.2,-10.3,0),height=1.5,length=3.3,width=0.1)
+text(pos=vec(14.55,-10.7,0),axis=vec(3,0,0),text="Trash",color=color.black,depth=0.05)
+
+
+# classes
 class Component :
     def __init__(self) :
         self.parts = []
@@ -43,9 +54,11 @@ class Component :
     def destroy(self) :
         for obj in self.parts:
             obj.visible = False
+        if self.covered_line!=None:
+            self.covered_line.visible = True
             
 class Inductor(Component) :
-    def __init__(self,ind=10) :
+    def __init__(self,ind=0.01) :
         Component.__init__(self)
         self.kind = "inductor"
         self.inductance = ind
@@ -56,10 +69,11 @@ class Inductor(Component) :
         self.parts = [self.outline,self.hel,self.leftl,self.rightl]
 
 class Capacitor(Component) :
-    def __init__(self,cap=10) :
+    def __init__(self,cap=0.04,vol=10) :
         Component.__init__(self)
         self.kind = "capacitor"
         self.capacitance = cap
+        self.voltage = vol
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
         self.left_plate = box(pos=vec(-0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
         self.right_plate = box(pos=vec(0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
@@ -68,7 +82,7 @@ class Capacitor(Component) :
         self.parts = [self.outline,self.left_plate,self.right_plate,self.leftl,self.rightl]
             
 class Resistor(Component) :
-    def __init__(self,res=10) :
+    def __init__(self,res=0.1) :
         Component.__init__(self)
         self.kind = "resistor"
         self.resistance = res
@@ -100,13 +114,17 @@ class Node() :
         self.edges = []
 
 
+# globals
 dragObject = None
 lastPos = None
 started = False
-
 objects = []
+loops = []
+t = 0
+Q = 0
 
-    
+
+# mouse-related functions
 def drag(evt) :
     global dragObject, lastPos
     if started==False:
@@ -126,7 +144,7 @@ def drop(evt) :
         if dragObject.kind=="wire" :
             if dragObject.direction=="vert":
                 shift = snap_obj_vert(obj_pos)
-        if shift!=None:
+        if shift!=None or shift == vec(0,0,0):
             dragObject.move(shift)
             new_pos = dragObject.outline.pos;
             if dragObject.kind=="wire" :
@@ -157,28 +175,37 @@ def snap_obj_vert(obj_pos) :
                 return vec(i*10-15,j*6-6,0)-obj_pos
     return None
     
+
+# button-related functions
 def new_inductor(evt) :
-    ind = Inductor()
-    objects.append(ind)
+    if started==False:
+        ind = Inductor()
+        objects.append(ind)
     
 def new_capacitor(evt) :
-    cap = Capacitor()
-    objects.append(cap)
+    if started==False:
+        cap = Capacitor()
+        objects.append(cap)
     
 def new_resistor(evt) :
-    res = Resistor()
-    objects.append(res)
+    if started==False:
+        res = Resistor()
+        objects.append(res)
     
 def new_horiz_wire(evt) :
-    wire = Wire(vec(-5,0,0),vec(10,0,0),"horiz")
-    objects.append(wire)
+    if started==False:
+        wire = Wire(vec(-5,0,0),vec(10,0,0),"horiz")
+        objects.append(wire)
     
 def new_vert_wire(evt) :
-    wire = Wire(vec(0,-3,0),vec(0,6,0),"vert")
-    objects.append(wire)
+    if started==False:
+        wire = Wire(vec(0,-3,0),vec(0,6,0),"vert")
+        objects.append(wire)
     
 def run(evt) :
-    global started
+    global started, loops, t
+    if started==True:
+        return None
     nodes = []
     for j in range(4):
         row = []
@@ -200,11 +227,16 @@ def run(evt) :
             row = int(3-(obj.outline.pos.y + 9)/6)
             node1 = nodes[row][col]
             node2 = nodes[row][col+1]
-        edge = (node1,node2,obj)
+        edge = [node1, node2, obj]
         node1.edges.append(edge)
         node2.edges.append(edge)
         edges.append(edge)
     loops = find_loops(nodes,edges)
+    for i in range(len(loops)):
+        for edge in loops[i]:
+            if len(edge) < 4:
+                edge.append([])
+            edge[3].append(i)
     if len(loops)==0 :
         print("Must have at least one loop to run")
         return None
@@ -214,14 +246,74 @@ def run(evt) :
         print("loop",i+1)
         for edge in loops[i]:
             print(edge[2].kind)
-            
+    for edge in edges:
+        if len(edge) > 3 and len(edge[3]) > 1:
+            print("shared component:", edge[2].kind)
     started = True
     for line in horiz :
         line.visible = False
     for line in vert :
         line.visible = False
-    print(started)
         
+def stop(evt) :
+    global started
+    started = False
+    for line in horiz :
+        line.visible = True
+    for line in vert :
+        line.visible = True
+    for obj in objects :
+        obj.covered_line.visible = False
+        
+def simple_loop(evt) :
+    global dragObject
+    reset(evt)
+    new_resistor(evt)
+    dragObject = objects[0]
+    shift = vec(0,3,0)-dragObject.outline.pos
+    dragObject.move(shift)
+    drop(evt)
+    new_horiz_wire(evt)
+    dragObject = objects[1]
+    shift = vec(0,-3,0)-dragObject.outline.pos
+    dragObject.move(shift)
+    drop(evt)
+    new_capacitor(evt)
+    dragObject = objects[2]
+    shift = vec(-10,3,0)-dragObject.outline.pos
+    dragObject.move(shift)
+    drop(evt)
+    new_inductor(evt)
+    dragObject = objects[3]
+    shift = vec(-10,-3,0)-dragObject.outline.pos
+    dragObject.move(shift)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[4]
+    shift = vec(-15,0,0)-dragObject.outline.pos
+    dragObject.move(shift)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[5]
+    shift = vec(5,0,0)-dragObject.outline.pos
+    dragObject.move(shift)
+    drop(evt)
+        
+def reset(evt) :
+    global objects, t
+    if started==True :
+        stop(evt)
+    for obj in objects:
+        obj.destroy()
+    objects = []
+    current_plot.data = []
+    current_plot.delete()
+    voltage_plot.data = []
+    voltage_plot.delete()
+    t=0
+    Q=0
+
+# dfs to find loops
 def other_node(edge,node):
     if edge[0] == node:
         return edge[1]
@@ -287,20 +379,14 @@ def find_loops(nodes,edges):
             loops.append(loop)
     return loops
     
-def stop(evt) :
-    global started
-    started = False
-    for line in horiz :
-        line.visible = True
-    for line in vert :
-        line.visible = True
-    for obj in objects :
-        obj.covered_line.visible = False
+    
 
-        
+# mouse binds
 scene.bind('mousedown',drag)
 scene.bind('mouseup',drop)
 
+
+# buttons
 new_ind_button = button(bind=new_inductor,text='new inductor')
 new_cap_button = button(bind=new_capacitor,text='new capacitor')
 new_res_button = button(bind=new_resistor,text='new resistor')
@@ -308,14 +394,46 @@ new_horiz_wire_button = button(bind=new_horiz_wire,text='new horizontal wire')
 new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
 run_button = button(bind=run,text='run simulation')
 stop_button = button(bind=stop,text='stop simulation')
+reset_button = button(bind=reset,text='reset')
+simple_loop_button = button(bind=simple_loop,text="create basic RLC circuit")
 
-box(pos=vec(16.2,-10.3,0),height=1.5,length=3.3,width=0.1)
-text(pos=vec(14.55,-10.7,0),axis=vec(3,0,0),text="Trash",color=color.black,depth=0.05)
 
+# constant loop
 while True:
     rate(60)
     if started==True:
-        None
+        for loop in loops:
+            for edge in loop:
+                obj = edge[2]
+                if obj.kind=="resistor":
+                    R_val = obj.resistance
+                elif obj.kind=="inductor":
+                    L_val = obj.inductance
+                elif obj.kind=="capacitor":
+                    C_val = obj.capacitance
+                    V0_val = obj.voltage
+            t_max = 5
+            dt = 0.0001
+            if Q==0:
+                Q = C_val * V0_val
+            I = 0.0
+            
+            while t < t_max and started==True:
+                rate(10000)
+            
+                V_C = Q / C_val
+                dI_dt = (-V_C - (I * R_val)) / L_val
+            
+                I = I + dI_dt * dt
+                Q = Q + I * dt
+            
+                current_plot.plot(t, I)
+                voltage_plot.plot(t, V_C)
+            
+                t = t + dt
+        
+        print("Simulation finished.")
+        stop()
     else:
         if dragObject != None:
             newPos = scene.mouse.project(normal=vec(0,0,1))
