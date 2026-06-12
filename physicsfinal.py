@@ -267,7 +267,7 @@ def stop(evt) :
     for obj in objects :
         obj.covered_line.visible = False
         
-def simple_loop(evt) :
+def simple_rlc(evt) :
     global dragObject
     reset(evt)
     new_resistor(evt)
@@ -299,6 +299,90 @@ def simple_loop(evt) :
     dragObject = objects[5]
     shift = vec(5,0,0)-dragObject.outline.pos
     dragObject.move(shift)
+    drop(evt)
+    
+def simple_rc(evt):
+    global dragObject
+    reset(evt)
+    new_resistor(evt)
+    dragObject = objects[0]
+    dragObject.move(vec(0,3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_horiz_wire(evt)
+    dragObject = objects[1]
+    dragObject.move(vec(0,-3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_capacitor(evt)
+    dragObject = objects[2]
+    dragObject.move(vec(-10,3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_horiz_wire(evt)
+    dragObject = objects[3]
+    dragObject.move(vec(-10,-3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[4]
+    dragObject.move(vec(-15,0,0) - dragObject.outline.pos)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[5]
+    dragObject.move(vec(5,0,0) - dragObject.outline.pos)
+    drop(evt)
+    
+def simple_rl(evt):
+    global dragObject
+    reset(evt)
+    new_resistor(evt)
+    dragObject = objects[0]
+    dragObject.move(vec(0,3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_horiz_wire(evt)
+    dragObject = objects[1]
+    dragObject.move(vec(0,-3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_inductor(evt)
+    dragObject = objects[2]
+    dragObject.move(vec(-10,3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_horiz_wire(evt)
+    dragObject = objects[3]
+    dragObject.move(vec(-10,-3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[4]
+    dragObject.move(vec(-15,0,0) - dragObject.outline.pos)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[5]
+    dragObject.move(vec(5,0,0) - dragObject.outline.pos)
+    drop(evt)
+    
+def double_resistor_rlc(evt):
+    global dragObject
+    reset(evt)
+    new_resistor(evt)
+    dragObject = objects[0]
+    dragObject.move(vec(-10,3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_resistor(evt)
+    dragObject = objects[1]
+    dragObject.move(vec(0,3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_capacitor(evt)
+    dragObject = objects[2]
+    dragObject.move(vec(-10,-3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_inductor(evt)
+    dragObject = objects[3]
+    dragObject.move(vec(0,-3,0) - dragObject.outline.pos)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[4]
+    dragObject.move(vec(-15,0,0) - dragObject.outline.pos)
+    drop(evt)
+    new_vert_wire(evt)
+    dragObject = objects[5]
+    dragObject.move(vec(5,0,0) - dragObject.outline.pos)
     drop(evt)
         
 def reset(evt) :
@@ -498,7 +582,10 @@ new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
 run_button = button(bind=run,text='run simulation')
 stop_button = button(bind=stop,text='stop simulation')
 reset_button = button(bind=reset,text='reset')
-simple_loop_button = button(bind=simple_loop,text="create basic RLC circuit")
+simple_loop_button = button(bind=simple_rlc,text="create basic RLC circuit")
+simple_rc_button = button(bind=simple_rc, text="create basic RC circuit")
+simple_rl_button = button(bind=simple_rl, text="create basic RL circuit")
+double_res_button = button(bind=double_resistor_rlc, text="create double resistor RLC")
 
 
 # constant loop
