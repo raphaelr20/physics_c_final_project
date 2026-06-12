@@ -122,7 +122,6 @@ started = False
 objects = []
 edges = []
 loops = []
-t = 0
 
 
 # mouse-related functions
@@ -207,6 +206,7 @@ def run(evt) :
     global started, loops, edges
     if started==True:
         return None
+    reset_graph(evt)
     nodes = []
     for j in range(4):
         row = []
@@ -267,6 +267,25 @@ def stop(evt) :
     for obj in objects :
         obj.covered_line.visible = False
         
+def reset(evt) :
+    global objects
+    if started==True :
+        stop(evt)
+    for obj in objects:
+        obj.destroy()
+    objects = []
+    loops = []
+    edges = []
+    reset_graph(evt)
+    
+def reset_graph(evt) :
+    current_plot.data = []
+    current_plot.delete()
+    voltage_plot.data = []
+    voltage_plot.delete()
+    
+    
+# basic circuits
 def simple_rlc(evt) :
     global dragObject
     reset(evt)
@@ -385,20 +404,6 @@ def double_resistor_rlc(evt):
     dragObject.move(vec(5,0,0) - dragObject.outline.pos)
     drop(evt)
         
-def reset(evt) :
-    global objects, t
-    if started==True :
-        stop(evt)
-    for obj in objects:
-        obj.destroy()
-    objects = []
-    current_plot.data = []
-    current_plot.delete()
-    voltage_plot.data = []
-    voltage_plot.delete()
-    t=0
-    loops = []
-    edges = []
 
 # dfs to find loops
 def other_node(edge,node):
@@ -469,7 +474,6 @@ def find_loops(nodes,edges):
     
 # simulation functions
 def simulate(loops, edges) :
-    global t
     num_loops = len(loops)
     I = []
     for i in range(num_loops):
@@ -477,6 +481,7 @@ def simulate(loops, edges) :
     for obj in objects:
         if obj.kind == "capacitor":
             obj.charge = obj.capacitance * obj.voltage
+    t = 0
     t_max = 5
     dt = 0.0001
     
@@ -574,18 +579,33 @@ scene.bind('mouseup',drop)
 
 
 # buttons
-new_ind_button = button(bind=new_inductor,text='new inductor')
-new_cap_button = button(bind=new_capacitor,text='new capacitor')
-new_res_button = button(bind=new_resistor,text='new resistor')
-new_horiz_wire_button = button(bind=new_horiz_wire,text='new horizontal wire')
-new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
+scene.append_to_caption('\n')
 run_button = button(bind=run,text='run simulation')
+scene.append_to_caption('    ')
 stop_button = button(bind=stop,text='stop simulation')
+scene.append_to_caption('    ')
 reset_button = button(bind=reset,text='reset')
+scene.append_to_caption('\n')
+scene.append_to_caption('\n')
 simple_loop_button = button(bind=simple_rlc,text="create basic RLC circuit")
+scene.append_to_caption('   ')
 simple_rc_button = button(bind=simple_rc, text="create basic RC circuit")
+scene.append_to_caption('   ')
 simple_rl_button = button(bind=simple_rl, text="create basic RL circuit")
+scene.append_to_caption('   ')
 double_res_button = button(bind=double_resistor_rlc, text="create double resistor RLC")
+scene.append_to_caption('\n')
+scene.append_to_caption('\n')
+new_ind_button = button(bind=new_inductor,text='new inductor')
+scene.append_to_caption('    ')
+new_cap_button = button(bind=new_capacitor,text='new capacitor')
+scene.append_to_caption('    ')
+new_res_button = button(bind=new_resistor,text='new resistor')
+scene.append_to_caption('    ')
+new_horiz_wire_button = button(bind=new_horiz_wire,text='new horizontal wire')
+scene.append_to_caption('    ')
+new_vert_wire_button = button(bind=new_vert_wire,text='new vertical wire')
+
 
 
 # constant loop
