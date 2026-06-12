@@ -74,6 +74,7 @@ class Capacitor(Component) :
         self.kind = "capacitor"
         self.capacitance = cap
         self.voltage = vol
+        self.charge = cap*vol
         self.outline = box(pos=vec(0,0,0),length=6,height=2,opacity=0)
         self.left_plate = box(pos=vec(-0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
         self.right_plate = box(pos=vec(0.5,0,0),length=0.2,height=3,width=0.2,color=color.red)
@@ -119,9 +120,9 @@ dragObject = None
 lastPos = None
 started = False
 objects = []
+edges = []
 loops = []
 t = 0
-Q = 0
 
 
 # mouse-related functions
@@ -203,7 +204,7 @@ def new_vert_wire(evt) :
         objects.append(wire)
     
 def run(evt) :
-    global started, loops, t
+    global started, loops, edges
     if started==True:
         return None
     nodes = []
@@ -231,6 +232,7 @@ def run(evt) :
         node1.edges.append(edge)
         node2.edges.append(edge)
         edges.append(edge)
+    loops = []
     loops = find_loops(nodes,edges)
     for i in range(len(loops)):
         for edge in loops[i]:
@@ -311,7 +313,8 @@ def reset(evt) :
     voltage_plot.data = []
     voltage_plot.delete()
     t=0
-    Q=0
+    loops = []
+    edges = []
 
 # dfs to find loops
 def other_node(edge,node):
@@ -380,6 +383,106 @@ def find_loops(nodes,edges):
     return loops
     
     
+# simulation functions
+def simulate(loops, edges) :
+    global t
+    num_loops = len(loops)
+    I = []
+    for i in range(num_loops):
+        I.append(0)
+    for obj in objects:
+        if obj.kind == "capacitor":
+            obj.charge = obj.capacitance * obj.voltage
+    t_max = 5
+    dt = 0.0001
+    
+    while t < t_max and started==True:
+        rate(10000)
+        A = []
+        B = []
+        for i in range(num_loops):
+            row = []
+            for k in range(num_loops) :
+                row.append(0)
+            rhs = 0
+            for edge in loops[i]:
+                obj = edge[2]
+                if obj.kind=="wire":
+                    continue
+                loops_using = edge[3]
+                for k in loops_using:
+                    if k==i:
+                        sign = 1
+                    else:
+                        sign = -1
+                    if obj.kind=="resistor":
+                        row[k] += (obj.resistance*sign)
+                    elif obj.kind=="inductor":
+                        row[k] += (obj.inductance/dt*sign)
+                    elif obj.kind=="capacitor":
+                        row[k] += (dt/obj.capacitance*sign)
+                old_current = edge_current(edge,i,I)
+                if obj.kind == "inductor":
+                    rhs = rhs + (obj.inductance / dt) * old_current
+                elif obj.kind == "capacitor":
+                    rhs = rhs - (obj.charge / obj.capacitance)
+            A.append(row)
+            B.append(rhs)
+        newI = solve_matrix(A,B)
+        if newI==None:
+            return None
+        I = newI
+        for edge in edges:
+            obj = edge[2]
+            if obj.kind == "capacitor":
+                loop_index = edge[3][0]
+                cap_current = edge_current(edge, loop_index, I)
+                obj.charge = obj.charge + cap_current * dt
+        current_plot.plot(t, I[0])
+        for obj in objects:
+            if obj.kind == "capacitor":
+                voltage_plot.plot(t, obj.charge / obj.capacitance)
+                break
+        t = t + dt
+            
+def edge_current(edge, loop_index, I):
+    loops_using = edge[3]
+    if len(loops_using) == 1:
+        return I[loop_index]
+    other = loops_using[0]
+    if other == loop_index:
+        other = loops_using[1]
+    return I[loop_index] - I[other]
+
+def solve_matrix(A, b):
+    n = len(b)
+    for i in range(n):
+        max_row = i
+        for r in range(i+1, n):
+            if abs(A[r][i]) > abs(A[max_row][i]):
+                max_row = r
+        A[i], A[max_row] = A[max_row], A[i]
+        b[i], b[max_row] = b[max_row], b[i]
+
+        pivot = A[i][i]
+
+        if abs(pivot) < 0.0000000001:
+            print("Matrix cannot be solved")
+            return None
+
+        for c in range(i, n):
+            A[i][c] = A[i][c] / pivot
+        b[i] = b[i] / pivot
+
+        for r in range(n):
+            if r != i:
+                factor = A[r][i]
+                for c in range(i, n):
+                    A[r][c] = A[r][c] - factor * A[i][c]
+                b[r] = b[r] - factor * b[i]
+    return b
+    
+    
 
 # mouse binds
 scene.bind('mousedown',drag)
@@ -402,38 +505,9 @@ simple_loop_button = button(bind=simple_loop,text="create basic RLC circuit")
 while True:
     rate(60)
     if started==True:
-        for loop in loops:
-            for edge in loop:
-                obj = edge[2]
-                if obj.kind=="resistor":
-                    R_val = obj.resistance
-                elif obj.kind=="inductor":
-                    L_val = obj.inductance
-                elif obj.kind=="capacitor":
-                    C_val = obj.capacitance
-                    V0_val = obj.voltage
-            t_max = 5
-            dt = 0.0001
-            if Q==0:
-                Q = C_val * V0_val
-            I = 0.0
-            
-            while t < t_max and started==True:
-                rate(10000)
-            
-                V_C = Q / C_val
-                dI_dt = (-V_C - (I * R_val)) / L_val
-            
-                I = I + dI_dt * dt
-                Q = Q + I * dt
-            
-                current_plot.plot(t, I)
-                voltage_plot.plot(t, V_C)
-            
-                t = t + dt
-        
+        simulate(loops, edges)
         print("Simulation finished.")
-        stop()
+        stop(None)
     else:
         if dragObject != None:
             newPos = scene.mouse.project(normal=vec(0,0,1))
